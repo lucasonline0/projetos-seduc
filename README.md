@@ -1,2 +1,2 @@
-# projetos-seduc
-projetos para automatizar coisas na seduc
+# PROJETOS SEDUC
+Projetos de automatização de  tarefas dentro da SEDUC
