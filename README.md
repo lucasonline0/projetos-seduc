@@ -8,3 +8,10 @@ Este repositório centraliza projetos, códigos e documentações desenvolvidos 
 - Compartilhar soluções técnicas criadas pelos estagiários para desafios da SEDUC.
 - Evitar retrabalho ao permitir a reutilização de códigos e ideias entre setores.
 - Documentar lições aprendidas durante os projetos das coordenações.
+
+## Soluções desenvolvidas
+
+- Geração de relatórios (em planihas e PDF) e envio automáticos de e-mails (concluída)
+- Gerador de despachos (em andamento)
+- Web scraping no site da Seduc (obtenção e organização de arquivos referentes aos PSS's)
+- Formulário de avaliação de Estágio Probatório para chefia
