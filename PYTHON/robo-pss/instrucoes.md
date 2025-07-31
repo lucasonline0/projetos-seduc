@@ -1,6 +1,8 @@
 # Web Scraping
 
-## Objetivo: extrair arquivos do tipo .PDF do site da Seduc referentes aos Processos Seletivos Simplificados (PSS)
+## Objetivo
+
+Extrair arquivos do tipo .PDF do site da Seduc referentes aos Processos Seletivos Simplificados (PSS)
 
 ## Detalhes importantes
 
