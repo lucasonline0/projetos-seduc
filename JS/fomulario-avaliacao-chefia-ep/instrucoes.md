@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Criar um formulário de avaliação online para que as chefias (Diretores Escoalres) possam avaliar seus servidores.
+Criar um formulário de avaliação online para que as chefias (Diretores Escolares) possam avaliar seus servidores.
 
 ## Detalhes importantes
 
