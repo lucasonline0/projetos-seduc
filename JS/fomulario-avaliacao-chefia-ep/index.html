@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #0d47a1; 
+      --secondary-color: #d32f2f; 
+      --light-gray: #f4f7f6;
+      --text-color: #333;
+      --border-color: #ddd;
+    }
+
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: var(--text-color);
+      padding: 30px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .container {
+      max-width: 650px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary-color);
+      font-weight: 700;
+      margin-bottom: 30px;
+    }
+
+    form {
+      background-color: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+      border-top: 5px solid var(--primary-color);
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 25px;
+      margin-bottom: 8px;
+      color: #555;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      transition: border-color 0.3s, box-shadow 0.3s;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.15);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .rating-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .rating-group input[type="radio"] {
+      display: none;
+    }
+
+    .rating-group label {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      margin: 0 4px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+      font-weight: 500;
+    }
+    
+    .rating-group label:first-of-type { margin-left: 0; }
+    .rating-group label:last-of-type { margin-right: 0; }
+
+
+    .rating-group input[type="radio"]:checked + label {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .rating-group label:hover {
+        border-color: #aaa;
+    }
+
+    button[type="submit"] {
+      margin-top: 40px;
+      padding: 15px;
+      background-color: var(--secondary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #b71c1c;
+      transform: translateY(-2px);
+    }
+    
+    button[type="submit"]:disabled {
+        background-color: #aaa;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Mensagens de feedback */
+    #statusMessage, #downloadLink {
+      text-align: center;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    #statusMessage {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    #downloadLink a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    #downloadLink a:hover {
+        text-decoration: underline;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sistema de Avaliação de Estágio Probatório</h1>
+    <form id="avaliacaoForm">
+      <label for="email">Seu E-mail</label>
+      <input type="email" id="email" name="email" required placeholder="ex: seu.email@dominio.com">
+
+      <label for="nome">Nome do servidor avaliado</label>
+      <input type="text" id="nome" name="nome" required placeholder="Nome completo do servidor">
+
+      <label for="matricula">Matrícula</label>
+      <input type="text" id="matricula" name="matricula" required placeholder="000.000-0">
+
+      <label for="cargo">Cargo</label>
+      <input type="text" id="cargo" name="cargo" required placeholder="Cargo do servidor">
+
+      <label>Assiduidade</label>
+      <div class="rating-group" id="assiduidade">
+        <input type="radio" id="ass1" name="assiduidade" value="1" required><label for="ass1">1</label>
+        <input type="radio" id="ass2" name="assiduidade" value="2"><label for="ass2">2</label>
+        <input type="radio" id="ass3" name="assiduidade" value="3"><label for="ass3">3</label>
+        <input type="radio" id="ass4" name="assiduidade" value="4"><label for="ass4">4</label>
+        <input type="radio" id="ass5" name="assiduidade" value="5"><label for="ass5">5</label>
+      </div>
+
+      <label>Pontualidade</label>
+      <div class="rating-group" id="pontualidade">
+        <input type="radio" id="pon1" name="pontualidade" value="1" required><label for="pon1">1</label>
+        <input type="radio" id="pon2" name="pontualidade" value="2"><label for="pon2">2</label>
+        <input type="radio" id="pon3" name="pontualidade" value="3"><label for="pon3">3</label>
+        <input type="radio" id="pon4" name="pontualidade" value="4"><label for="pon4">4</label>
+        <input type="radio" id="pon5" name="pontualidade" value="5"><label for="pon5">5</label>
+      </div>
+
+      <label>Competência Técnica</label>
+      <div class="rating-group" id="competencia">
+        <input type="radio" id="comp1" name="competencia" value="1" required><label for="comp1">1</label>
+        <input type="radio" id="comp2" name="competencia" value="2"><label for="comp2">2</label>
+        <input type="radio" id="comp3" name="competencia" value="3"><label for="comp3">3</label>
+        <input type="radio" id="comp4" name="competencia" value="4"><label for="comp4">4</label>
+        <input type="radio" id="comp5" name="competencia" value="5"><label for="comp5">5</label>
+      </div>
+      
+      <label for="observacoes">Observações e recomendações</label>
+      <textarea id="observacoes" name="observacoes" rows="4" placeholder="Descreva aqui pontos fortes, pontos a melhorar ou outras considerações."></textarea>
+
+      <button type="submit">Enviar Avaliação</button>
+
+      <div id="statusMessage" style="display:none;"></div>
+      <div id="downloadLink" style="display:none;"></div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("avaliacaoForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const form = this;
+      const submitButton = form.querySelector('button[type="submit"]');
+      const statusMessageDiv = document.getElementById("statusMessage");
+      const linkDiv = document.getElementById("downloadLink");
+
+      submitButton.disabled = true;
+      submitButton.textContent = 'Enviando...';
+
+      statusMessageDiv.style.display = 'none';
+      linkDiv.style.display = 'none';
+
+      const formData = Object.fromEntries(new FormData(form).entries());
+
+      google.script.run
+        .withSuccessHandler((url) => {
+          statusMessageDiv.innerHTML = 'Avaliação enviada e relatório gerado com sucesso!';
+          statusMessageDiv.style.display = 'block';
+
+          linkDiv.innerHTML = `<a href="${url}" target="_blank">📄 Clique aqui para baixar o relatório em PDF</a>`;
+          linkDiv.style.display = 'block';
+          
+          form.reset();
+          submitButton.disabled = false;
+          submitButton.textContent = 'Enviar Avaliação';
+        })
+        .withFailureHandler((error) => {
+
+          statusMessageDiv.innerHTML = `Ocorreu um erro: ${error.message}`;
+          statusMessageDiv.style.backgroundColor = '#ffcdd2'; 
+          statusMessageDiv.style.color = '#c62828'; 
+          statusMessageDiv.style.display = 'block';
+          
+          submitButton.disabled = false;
+          submitButton.textContent = 'Tentar Novamente';
+        })
+        .enviarAvaliacao(formData);
+    });
+  </script>
+</body>
+</html>
