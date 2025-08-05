@@ -42,6 +42,50 @@ function gerarDREsSelecionadas() {
   }
 }
 
+// Lista completa de todas as DREs
+const listaDREsCompleta = [
+  "DRE XINGUARA",
+  "DRE TUCURUI",
+  "DRE ABAETETUBA",
+  "DRE AFUA",
+  "DRE ALTAMIRA",
+  "DRE ANANINDEUA 1",
+  "DRE ANANINDEUA 2",
+  "DRE ANANINDEUA 3",
+  "DRE ANANINDEUA 4",
+  "DRE ANANINDEUA 5",
+  "DRE BELEM 1",
+  "DRE BELEM 10",
+  "DRE BELEM 2",
+  "DRE BELEM 3",
+  "DRE BELEM 4",
+  "DRE BELEM 5",
+  "DRE BELEM 6",
+  "DRE BELEM 7",
+  "DRE BELEM 8",
+  "DRE BELEM 9",
+  "DRE BENEVIDES",
+  "DRE BRAGANCA",
+  "DRE BREVES",
+  "DRE CACHOEIRA DO ARARI",
+  "DRE CAMETA",
+  "DRE CAPANEMA",
+  "DRE CAPITAO POCO",
+  "DRE CASTANHAL",
+  "DRE CONCEICAO DO ARAGUAIA",
+  "DRE CURRALINHO",
+  "DRE ITAITUBA",
+  "DRE MAE DO RIO",
+  "DRE MARABA",
+  "DRE MARACANA",
+  "DRE MONTE ALEGRE",
+  "DRE OBIDOS",
+  "DRE PARAUAPEBAS",
+  "DRE SANTA BARBARA",
+  "DRE SANTA IZABEL DO PARA",
+  "DRE SANTAREM"
+];
+
 function exportarDREsParaPlanilhas(dresSelecionadas = []) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const abaBase = ss.getSheetByName("BASE_EFETIVOS");
