@@ -32,3 +32,4 @@ function enviarAvaliacao(formData) {
 
   return pdfFile.getUrl();
 }
+ //script by @lucasonline0

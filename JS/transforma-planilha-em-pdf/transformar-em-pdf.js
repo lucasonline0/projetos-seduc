@@ -66,3 +66,5 @@ function converterPlanilhasParaPDF() {
 
   Logger.log("Conversão finalizada!");
 }
+
+//script by @lucasonline0

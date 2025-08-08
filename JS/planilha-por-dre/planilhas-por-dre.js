@@ -198,3 +198,4 @@ function exportarDREsParaPlanilhas(dresSelecionadas = []) {
 function removerAcentos(texto) {
   return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
+//script by @lucasonline0

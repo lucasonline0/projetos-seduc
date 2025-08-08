@@ -61,3 +61,4 @@ function onOpen() {
     SpreadsheetApp.flush();
   }
   
+  //script by @lucasonline0

@@ -67,5 +67,4 @@ function enviarPlanilhasPorEmail() {
   }
 }
 
-
 // script by @lucasonline0
