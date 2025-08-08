@@ -6,19 +6,9 @@ Bem-vindo ao nosso espaço de colaboração e inovação! Este repositório é o
 
 ---
 
-### 🎯 Nossos Pilares
-
-Nossos projetos são guiados pelos seguintes objetivos:
-
--   **🚀 Inovação e Impacto:** Compartilhar e implementar soluções técnicas que otimizem os processos e resolvam desafios reais dentro da SEDUC.
--   **📚 Conhecimento Compartilhado:** Criar uma base de conhecimento centralizada, permitindo a reutilização de códigos, ideias e soluções entre diferentes setores e projetos.
--   **💡 Aprendizado Contínuo:** Documentar as lições aprendidas e os desafios superados em cada projeto, acelerando o desenvolvimento de futuras soluções e evitando o retrabalho.
-
----
-
 ### 📂 Projetos em Destaque
 
-Aqui estão as soluções que estamos desenvolvendo para a comunidade SEDUC.
+Aqui estão as soluções que estamos desenvolvendo para a SEDUC.
 
 | Status | Projeto | Descrição |
 | :---: | :--- | :--- |
