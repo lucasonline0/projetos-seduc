@@ -41,10 +41,7 @@ class SeducPSScraper:
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler('seduc_scraper_otimizado.log'),
-                logging.StreamHandler()
-            ]
+            handlers=[logging.StreamHandler()]  # Apenas terminal
         )
         self.logger = logging.getLogger(__name__)
 
@@ -281,4 +278,4 @@ def main():
 if __name__ == "__main__":
     exit(main())
 
- # code by lucasonline0
+# code by lucasonline0
