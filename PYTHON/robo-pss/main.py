@@ -23,11 +23,19 @@ class SeducPSScraper:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
+<<<<<<< Updated upstream
 
         sys.stdout.reconfigure(encoding='utf-8')
         sys.stderr.reconfigure(encoding='utf-8')
 
         # cria log com timestamp unico por execuçao
+=======
+        
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+
+        # cria log com timestamp por execução
+>>>>>>> Stashed changes
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         log_file = f'seduc_scraper_{timestamp}.log'
 
@@ -39,6 +47,10 @@ class SeducPSScraper:
                 logging.FileHandler(log_file, encoding='utf-8')
             ]
         )
+<<<<<<< Updated upstream
+=======
+        # ajuste para que o arquivo so grave erros
+>>>>>>> Stashed changes
         for handler in logging.getLogger().handlers:
             if isinstance(handler, logging.FileHandler):
                 handler.setLevel(logging.ERROR)
