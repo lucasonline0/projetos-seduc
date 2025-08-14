@@ -3,12 +3,11 @@ import re
 import time
 import requests
 import logging
+import sys
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import List, Dict
-import sys
-from datetime import datetime
 
 class SeducPSScraper:
     def __init__(self):
@@ -43,18 +42,10 @@ class SeducPSScraper:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.StreamHandler(sys.stdout),
-                logging.FileHandler(log_file, encoding='utf-8')
+                logging.FileHandler('seduc_scraper_otimizado.log'),
+                logging.StreamHandler()
             ]
         )
-<<<<<<< Updated upstream
-=======
-        # ajuste para que o arquivo so grave erros
->>>>>>> Stashed changes
-        for handler in logging.getLogger().handlers:
-            if isinstance(handler, logging.FileHandler):
-                handler.setLevel(logging.ERROR)
-
         self.logger = logging.getLogger(__name__)
         self.stats = {'encontrados': 0, 'baixados': 0, 'erros': 0}
         
