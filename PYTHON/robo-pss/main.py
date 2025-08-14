@@ -24,23 +24,21 @@ class SeducPSScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
 
-        # Forçando codificação
         sys.stdout.reconfigure(encoding='utf-8')
         sys.stderr.reconfigure(encoding='utf-8')
 
-        # Criar log com timestamp único por execução
+        # cria log com timestamp unico por execuçao
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         log_file = f'seduc_scraper_{timestamp}.log'
 
         logging.basicConfig(
-            level=logging.INFO,  # Console: mostra tudo
+            level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.StreamHandler(sys.stdout),  # Console
-                logging.FileHandler(log_file, encoding='utf-8')  # Arquivo único por execução
+                logging.StreamHandler(sys.stdout),
+                logging.FileHandler(log_file, encoding='utf-8')
             ]
         )
-        # Ajusta para que o arquivo só grave erros
         for handler in logging.getLogger().handlers:
             if isinstance(handler, logging.FileHandler):
                 handler.setLevel(logging.ERROR)
