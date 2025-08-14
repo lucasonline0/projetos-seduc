@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import List, Dict
+from datetime import datetime
 
 class SeducPSScraper:
     def __init__(self):
