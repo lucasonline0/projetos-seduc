@@ -22,19 +22,12 @@ class SeducPSScraper:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
-<<<<<<< Updated upstream
-
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
-
-        # cria log com timestamp unico por execuçao
-=======
         
         sys.stdout.reconfigure(encoding='utf-8')
         sys.stderr.reconfigure(encoding='utf-8')
 
         # cria log com timestamp por execução
->>>>>>> Stashed changes
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         log_file = f'seduc_scraper_{timestamp}.log'
 
