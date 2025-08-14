@@ -99,3 +99,5 @@ function verificarDuplicatas() {
     Browser.msgBox('Duplicatas', mensagem, Browser.Buttons.OK);
   }
 }
+
+ // code by lucasonline0
