@@ -7,6 +7,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from typing import List, Dict
+import sys
+from datetime import datetime
 
 class SeducPSScraper:
     def __init__(self):
@@ -22,20 +24,33 @@ class SeducPSScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
 
+        # Forçando codificação
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+
+        # Criar log com timestamp único por execução
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        log_file = f'seduc_scraper_{timestamp}.log'
+
         logging.basicConfig(
-            level=logging.INFO,
+            level=logging.INFO,  # Console: mostra tudo
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler('seduc_scraper_otimizado.log'),
-                logging.StreamHandler()
+                logging.StreamHandler(sys.stdout),  # Console
+                logging.FileHandler(log_file, encoding='utf-8')  # Arquivo único por execução
             ]
         )
-        self.logger = logging.getLogger(__name__)
+        # Ajusta para que o arquivo só grave erros
+        for handler in logging.getLogger().handlers:
+            if isinstance(handler, logging.FileHandler):
+                handler.setLevel(logging.ERROR)
 
+        self.logger = logging.getLogger(__name__)
         self.stats = {'encontrados': 0, 'baixados': 0, 'erros': 0}
         
         print(f"🚀 Seduc PSS Scraper Otimizado")
         print(f"📂 Pasta: {self.downloads_folder}")
+        print(f"📝 Log: {log_file}")
 
     def run(self):
         try:
@@ -97,10 +112,9 @@ class SeducPSScraper:
     def extract_pss_name(self, text: str, href: str) -> str:
         combined = f"{text} {href}".upper()
         
-        # padrões comuns
         patterns = [
-            r'PSS[_\s-]*(\d+)[_\s-]*(\d{4})[_\s-]*([A-Z]+)',  
-            r'PSS[_\s-]*(\d+)[_\s-]*(\d{4})',                 
+            r'PSS[_\s-]*(\d+)[_\s-]*(\d{4})[_\s-]*([A-Z]+)',
+            r'PSS[_\s-]*(\d+)[_\s-]*(\d{4})',
         ]
         
         for pattern in patterns:
@@ -122,13 +136,8 @@ class SeducPSScraper:
             soup = BeautifulSoup(response.content, 'html.parser')
             
             pdfs = []
-            
             download_section = self.find_download_section(soup)
-            
-            if download_section:
-                links = download_section.find_all('a')
-            else:
-                links = soup.find_all('a')
+            links = download_section.find_all('a') if download_section else soup.find_all('a')
             
             for link in links:
                 arquivo_download = link.get('arquivo_download', '')
@@ -138,7 +147,6 @@ class SeducPSScraper:
                 if url_arquivo and self.is_valid_file(url_arquivo):
                     full_url = urljoin(url, url_arquivo)
                     filename = self.extract_filename(url_arquivo)
-
                     is_especial = 'CONVOCACAO' in f"{link.get_text()} {url_arquivo}".upper()
                     
                     pdfs.append({
@@ -185,10 +193,8 @@ class SeducPSScraper:
 
     def extract_filename(self, url: str) -> str:
         filename = os.path.basename(urlparse(url).path)
-        
         if not filename or '.' not in filename:
             filename = f"documento_{hash(url) % 10000}.pdf"
-        
         return re.sub(r'[<>:"/\\|?*]', '_', filename)
 
     def download_pdfs(self, pdfs: List[Dict]):
@@ -207,7 +213,6 @@ class SeducPSScraper:
             self.download_pss_files(pss_name, pss_pdfs)
 
     def download_pss_files(self, pss_name: str, pdfs: List[Dict]):
-
         pss_folder = self.downloads_folder / self.sanitize_name(pss_name)
         especiais_folder = pss_folder / "CONVOCACOES_ESPECIAIS"
         
@@ -230,11 +235,10 @@ class SeducPSScraper:
                 filepath.write_bytes(response.content)
                 self.logger.info(f"✅ [{i}/{len(pdfs)}] {pdf['filename']}")
                 self.stats['baixados'] += 1
-                
                 time.sleep(0.5) 
                 
             except Exception as e:
-                self.logger.warning(f"⚠️ Erro ao baixar {pdf['filename']}: {e}")
+                self.logger.error(f"⚠️ Erro ao baixar {pdf['filename']}: {e}")
                 self.stats['erros'] += 1
 
     def sanitize_name(self, name: str) -> str:
