@@ -7,7 +7,7 @@ from datetime import datetime
 from urllib.parse import unquote
 
 class Logger(object):
-    def __init__(self, filename="log_extracao_final_sem_api.txt"):
+    def __init__(self, filename="log_extracao.txt"):
         self.terminal = sys.stdout
         self.log = open(filename, "w", encoding='utf-8')
 
@@ -111,7 +111,7 @@ def extrair_informacoes_pdf(caminho_arquivo):
 def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
     registros = []
     
-    print("\n--- INICIANDO EXTRAÇÃO OTIMIZADA (SEM API) ---")
+    print("\n--- INICIANDO EXTRAÇÃO ---")
     if not os.path.isdir(caminho_da_pasta):
         print(f"ERRO: A pasta '{caminho_da_pasta}' não foi encontrada!")
         return
@@ -148,12 +148,12 @@ if __name__ == "__main__":
     print(f"--- LOG DE EXECUÇÃO - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
     
     pasta_convocacoes_especiais = "C:/Users/SEDUC/Desktop/conv especiais"
-    arquivo_csv_saida = "convocacoes_especiais_FINAL.csv"
+    arquivo_csv_saida = "convocacoes_especiais.csv"
     
     try:
         processar_pasta_e_salvar_planilha(pasta_convocacoes_especiais, arquivo_csv_saida)
     except Exception as e:
-        print(f"\n!!! OCORREU UM ERRO INESPERADO QUE INTERROMPEU O SCRIPT !!!")
+        print(f"\n OCORREU UM ERRO INESPERADO QUE INTERROMPEU O SCRIPT ")
         print(f"ERRO: {e}")
     finally:
         print(f"\n--- FIM DO LOG ---")
