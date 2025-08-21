@@ -144,7 +144,7 @@ def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
     print(f"Dados salvos em '{nome_arquivo_saida}'!")
 
 if __name__ == "__main__":
-    sys.stdout = Logger("log_extracao_final_sem_api.txt")
+    sys.stdout = Logger("log_extracao.txt")
     print(f"--- LOG DE EXECUÇÃO - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
     
     pasta_convocacoes_especiais = "C:/Users/SEDUC/Desktop/conv especiais"
