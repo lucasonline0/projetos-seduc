@@ -109,10 +109,10 @@ def padrao_tabela_generica(texto_completo, **kwargs):
                 idx_disciplina = 1
         data_start_index = 3 
     else:
-         print("      -> AVISO: Não foi possível determinar a ordem das colunas. Usando posições padrão.")
-         idx_municipio = 0
-         idx_disciplina = 1
-         data_start_index = 1
+        print("      -> AVISO: Não foi possível determinar a ordem das colunas. Usando posições padrão.")
+        idx_municipio = 0
+        idx_disciplina = 1
+        data_start_index = 1
     
     municipio_propagate = ""
     for linha in linhas[data_start_index:]:
@@ -127,7 +127,7 @@ def padrao_tabela_generica(texto_completo, **kwargs):
         if len(municipio_raw) > 3:
             municipio_propagate = municipio_raw
         elif not municipio_raw and municipio_propagate:
-             municipio_raw = municipio_propagate
+            municipio_raw = municipio_propagate
         
         if len(municipio_raw) > 3 and len(disciplina_raw) > 3:
             municipios_col_a = colunas[0].strip()
@@ -208,6 +208,11 @@ def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
 
     df = pd.DataFrame(registros)
     df = df[["Ano", "PSS", "Edital", "Município", "Disciplina", "Arquivo_Origem", "Data_Extração"]]
+
+    pasta_saida = os.path.dirname(nome_arquivo_saida)
+    if not os.path.exists(pasta_saida):
+        os.makedirs(pasta_saida)
+        
     df.to_csv(nome_arquivo_saida, index=False, sep=';', encoding='utf-8-sig')
     print("\n--- EXTRAÇÃO FINALIZADA ---")
     print(f"Total de arquivos PDF processados: {len(arquivos_na_pasta)}")
@@ -215,11 +220,17 @@ def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
     print(f"Dados salvos em '{nome_arquivo_saida}'!")
 
 if __name__ == "__main__":
-    sys.stdout = Logger()
+
+    pasta_saida_nome = "planilha conv especial"
+    os.makedirs(pasta_saida_nome, exist_ok=True)
+
+    caminho_log = os.path.join(pasta_saida_nome, "log_extracao.txt")
+    arquivo_csv_saida = os.path.join(pasta_saida_nome, "convocacoes_especiais.csv")
+
+    sys.stdout = Logger(caminho_log)
     print(f"--- LOG DE EXECUÇÃO - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---")
-    
+
     pasta_convocacoes_especiais = "C:/Users/SEDUC/Desktop/conv especiais"
-    arquivo_csv_saida = "convocacoes_especiais.csv"
     
     try:
         processar_pasta_e_salvar_planilha(pasta_convocacoes_especiais, arquivo_csv_saida)
