@@ -1,2 +1,7 @@
 downloads/
 /terminal_output.log
+planilha conv especial/
+*.csv
+*.log
+*.xlsx
+*.txt
