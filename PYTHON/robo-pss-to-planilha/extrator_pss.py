@@ -17,41 +17,86 @@ class Logger(object):
     def flush(self):
         pass
 
-def padrao_reforco_escolar(texto_completo, **kwargs):
+def padrao_lista_disciplina_unica(texto_completo, **kwargs):
+    print("      -> Padrão detectado: Lista de Disciplina Única")
+    registros = []
+    
+    disciplina_match = re.search(r'(?:FUNÇÃO|CARGO|DISCIPLINA)\s*:\s*([\s\S]+?)(?=\n\n|MUNICÍPIO|QUADRO DE VAGAS)', texto_completo, re.IGNORECASE)
+    disciplina = disciplina_match.group(1).replace('\n', ' ').strip() if disciplina_match else "Não Identificada"
 
+    if disciplina == "Não Identificada":
+        if "ATENDIMENTO EDUCACIONAL ESPECIALIZADO" in texto_completo.upper() or "AEE" in texto_completo.upper():
+            disciplina = "Atendimento Educacional Especializado (AEE)"
+        elif "SALA DE RECURSO MULTIFUNCIONAL" in texto_completo.upper():
+            disciplina = "Professor/Sala de Recurso Multifuncional"
+        elif "PROJETO MUNDI" in texto_completo.upper():
+            disciplina = "Professor para o Projeto Mundi"
+        elif "INTÉRPRETE DE LIBRAS" in texto_completo.upper():
+            disciplina = "Intérprete de Libras"
+        elif "ACOMPANHAMENTO ESPECIALIZADO" in texto_completo.upper():
+            disciplina = "Professor de Acompanhamento Especializado"
+
+    partes = re.split(r'QUADRO DE VAGAS|MUNICÍPIOS DE LOTAÇÃO|MUNICÍPIO DE LOTAÇÃO', texto_completo, flags=re.IGNORECASE)
+    if len(partes) < 2: return []
+    
+    texto_lista = partes[-1]
+    
+    for linha in texto_lista.strip().split('\n'):
+        mun_clean = re.sub(r'^\d+\s*-\s*', '', linha).strip()
+        if len(mun_clean) > 3 and not re.search(r'TOTAL|VAGAS|PÁGINA|EDITAL|CARGO|FUNÇÃO|ASSINATURA', mun_clean.upper()):
+            registros.append({"Município": mun_clean, "Disciplina": disciplina})
+            
+    return registros
+
+def padrao_reforco_escolar(texto_completo, **kwargs):
     print("      -> Padrão detectado: Projeto Reforço Escolar")
     registros = []
     
-    disciplinas_match = re.search(r'licenciatura em (letras com habilitação em língua portuguesa e licenciatura em matemática|pedagogia.*?e.*?educação física)', texto_completo, re.IGNORECASE)
+    texto_inicial = texto_completo[:1500].lower()
     disciplinas = []
-    if disciplinas_match:
-        texto_disciplinas = disciplinas_match.group(1)
-        if "portuguesa" in texto_disciplinas and "matemática" in texto_disciplinas:
-            disciplinas = ["Língua Portuguesa", "Matemática"]
-        elif "pedagogia" in texto_disciplinas and "física" in texto_disciplinas:
-            disciplinas = ["Pedagogia", "Educação Física"]
+    
+    has_lp = "língua portuguesa" in texto_inicial
+    has_mat = "matemática" in texto_inicial
+    has_ped = "pedagogia" in texto_inicial
+    has_ef = "educação física" in texto_inicial
+
+    if has_lp and has_mat:
+        disciplinas = ["Língua Portuguesa", "Matemática"]
+    elif has_ped and has_ef:
+        disciplinas = ["Pedagogia", "Educação Física"]
 
     if not disciplinas:
-        print("      -> AVISO: Não foi possível extrair as disciplinas do texto inicial.")
+        print("      -> AVISO: Não foi possível extrair as disciplinas (LP/MAT ou PED/EF) do texto inicial.")
         return []
     
     partes = re.split(r'QUADRO DE VAGAS|MUNICÍPIO DE LOTAÇÃO', texto_completo, flags=re.IGNORECASE)
-    texto_lista = partes[-1] if len(partes) > 1 else ""
+    if len(partes) < 2: return []
+        
+    texto_lista = partes[-1]
+    municipios = []
     
-    municipios = re.findall(r'^\s*([A-ZÇÃ-ÕÁ-Ú][a-zA-Zçã-õá-ú\s-]+?)\s+\d+\s*$', texto_lista, re.MULTILINE)
-    
+    linhas_municipios = texto_lista.strip().split('\n')
+    for linha in linhas_municipios:
+        mun_clean = linha.strip()
+        if len(mun_clean) > 3 and not re.search(r'TOTAL|VAGAS|PÁGINA|EDITAL', mun_clean.upper()):
+            mun_clean = re.sub(r'\s+\d+\s*$', '', mun_clean).strip()
+            municipios.append(mun_clean)
+
     for mun in municipios:
-        mun_clean = mun.strip()
-        if len(mun_clean) > 2:
+        if len(mun.strip()) > 2:
             for disc in disciplinas:
-                registros.append({"Município": mun_clean, "Disciplina": disc})
+                registros.append({"Município": mun.strip(), "Disciplina": disc})
     return registros
 
 def padrao_projeto_sei_refinado(texto_completo, **kwargs):
-
     print("      -> Padrão detectado: Projeto SEI (Refinado)")
     registros = []
     
+    if 'QUADRO DE VAGAS' not in texto_completo.upper():
+        print("      -> AVISO: Documento do Projeto SEI sem quadro de vagas.")
+        kwargs['status_flags']['sem_vagas'] = True 
+        return []
+
     partes_fim = re.split(r'RELAÇÃO DE E-MAILS|RELAÇÃO DE E-MAIL', texto_completo, flags=re.IGNORECASE)
     texto_relevante = partes_fim[0]
 
@@ -63,128 +108,133 @@ def padrao_projeto_sei_refinado(texto_completo, **kwargs):
     
     for linha in texto_tabela.strip().split('\n'):
         if "TOTAL DE VAGAS" in linha.upper(): break
+        
         ure_match = re.search(r'(\d+ª?\s*URE\s*[-\s]*[A-ZÇÃ-ÕÁ-Ú]+)', linha, re.IGNORECASE)
         if ure_match:
             ure_atual = ure_match.group(1).strip()
         else:
-            localidade = re.sub(r'\s+\d+\s*Manhã/Tarde/Noite.*$', '', linha).strip()
+            localidade = re.sub(r'\s+\d+\s*(Manhã/Tarde/Noite)?.*$', '', linha).strip()
             if len(localidade) > 3 and "VAGAS" not in localidade.upper():
                 registros.append({"Município": f"{localidade} ({ure_atual})", "Disciplina": disciplina})
     return registros
 
 def padrao_tabela_generica(texto_completo, **kwargs):
-
     print("      -> Padrão detectado: Tabela Genérica Flexível")
     partes = re.split(r'QUADRO DE VAGAS', texto_completo, flags=re.IGNORECASE)
-    texto_tabela = partes[-1] if len(partes) > 1 else ""
+    if len(partes) < 2: return []
+    
+    texto_tabela = partes[-1]
     linhas = texto_tabela.strip().split('\n')
     registros = []
 
-    idx_municipio, idx_disciplina = -1, -1
-    data_start_index = 0
+    header_idx = -1
+    keywords_municipio = ['MUNICÍPIO', 'LOCALIDADE']
+    keywords_disciplina = ['DISCIPLINA', 'FUNÇÃO', 'CARGO', 'COMPONENTE CURRICULAR']
     
-    texto_cabecalho = " ".join(linhas[:5]).upper().replace('\n', ' ')
-    
-    municipio_kw = ["LOCALIDADE PARA PROVIMENTO", "MUNICÍPIO DE LOTAÇÃO", "MUNICÍPIO"]
-    disciplina_kw = ["DISCIPLINA", "FUNÇÃO", "CARGO", "COMPONENTE CURRICULAR"]
-
-    pos_mun, pos_disc = -1, -1
-    for kw in municipio_kw:
-        if kw in texto_cabecalho:
-            pos_mun = texto_cabecalho.find(kw)
-            break
-    for kw in disciplina_kw:
-        if kw in texto_cabecalho:
-            pos_disc = texto_cabecalho.find(kw)
+    for i, linha in enumerate(linhas):
+        tem_municipio = any(kw in linha.upper() for kw in keywords_municipio)
+        tem_disciplina = any(kw in linha.upper() for kw in keywords_disciplina)
+        if tem_municipio and tem_disciplina:
+            header_idx = i
             break
             
-    if pos_mun != -1 and pos_disc != -1:
-        colunas_header = [col.strip() for col in re.split(r'\s{3,}', linhas[2])]
-        if len(colunas_header) > 1:
-            if pos_mun < pos_disc:
-                idx_municipio = 1
-                idx_disciplina = 2
-            else:
-                idx_municipio = 2
-                idx_disciplina = 1
-        data_start_index = 3 
-    else:
-        print("      -> AVISO: Não foi possível determinar a ordem das colunas. Usando posições padrão.")
-        idx_municipio = 0
-        idx_disciplina = 1
-        data_start_index = 1
-    
-    municipio_propagate = ""
-    for linha in linhas[data_start_index:]:
-        if "TOTAL DE VAGAS" in linha.upper(): break
-        colunas = re.split(r'\s{2,}', linha.strip())
-
-        if len(colunas) <= max(idx_municipio, idx_disciplina): continue
-
-        municipio_raw = colunas[idx_municipio].strip()
-        disciplina_raw = colunas[idx_disciplina].strip()
+    if header_idx != -1:
+        header_line = linhas[header_idx]
+        col_positions = []
+        for key, kws in [("municipio", keywords_municipio), ("disciplina", keywords_disciplina)]:
+            for kw in kws:
+                match = re.search(r'\b' + kw + r'\b', header_line, re.IGNORECASE)
+                if match:
+                    col_positions.append((match.start(), key))
+                    break
         
-        if len(municipio_raw) > 3:
-            municipio_propagate = municipio_raw
-        elif not municipio_raw and municipio_propagate:
-            municipio_raw = municipio_propagate
-        
-        if len(municipio_raw) > 3 and len(disciplina_raw) > 3:
-            municipios_col_a = colunas[0].strip()
-            if len(municipios_col_a) > len(municipio_raw):
-                municipios_para_add = [m.strip() for m in re.split(r',|\n', municipios_col_a) if len(m.strip()) > 2]
-                for mun in municipios_para_add:
-                    registros.append({"Município": municipio_raw, "Disciplina": disciplina_raw})
-            else:
-                registros.append({"Município": municipio_raw, "Disciplina": disciplina_raw})
+        if len(col_positions) >= 2:
+            col_positions.sort()
+            col_slices = {}
+            for i, (start, key) in enumerate(col_positions):
+                end = col_positions[i+1][0] if i + 1 < len(col_positions) else None
+                col_slices[key] = slice(start, end)
+            
+            municipio_propagate = ""
+            for linha in linhas[header_idx + 1:]:
+                if "TOTAL" in linha.upper(): break
+                
+                municipio_raw = linha[col_slices["municipio"]].strip() if "municipio" in col_slices else ""
+                disciplina_raw = linha[col_slices["disciplina"]].strip() if "disciplina" in col_slices else ""
+                
+                if len(municipio_raw) > 2:
+                    municipio_propagate = municipio_raw
+                if len(disciplina_raw) > 2 and municipio_propagate:
+                    registros.append({"Município": municipio_propagate, "Disciplina": disciplina_raw})
+
+    if not registros and header_idx != -1:
+        print("      -> AVISO: Análise por posição falhou. Tentando método de divisão.")
+        municipio_propagate = ""
+        for linha in linhas[header_idx + 1:]:
+            if "TOTAL" in linha.upper(): break
+            colunas = re.split(r'\s{2,}', linha.strip())
+            if len(colunas) >= 2:
+                if len(colunas[0]) > 2: municipio_propagate = colunas[0]
+                if len(colunas[1]) > 2 and municipio_propagate:
+                     registros.append({"Município": municipio_propagate, "Disciplina": colunas[1]})
+
     return registros
 
 def extrair_informacoes_pdf(caminho_arquivo):
+    status_flags = {'sem_vagas': False, 'imagem': False}
     try:
         with pdfplumber.open(caminho_arquivo) as pdf:
             texto_completo = "\n".join([pagina.extract_text(x_tolerance=2, layout=True) or "" for pagina in pdf.pages])
 
         nome_arquivo = os.path.basename(caminho_arquivo)
         print(f" -> Processando: {nome_arquivo}...")
+        
+        if len(texto_completo) < 250:
+            print(f"      -> AVISO: PDF pode ser uma imagem ou está vazio. Extração ignorada.")
+            status_flags['imagem'] = True
+            return []
 
-        pss_match = re.search(r'(?:PSS|PROCESSO SELETIVO SIMPLIFICADO)\s*N?º?\s*(\d{2,3}/\d{4})', texto_completo, re.IGNORECASE)
+        pss_match = re.search(r'(?:PSS|PROCESSO SELETIVO SIMPLIFICADO)\s*N?º?\s*(\d+/\d{4})', texto_completo, re.IGNORECASE)
         pss = pss_match.group(1) if pss_match else "Não encontrado"
-        ano_match = re.search(r'(\b20\d{2}\b)', nome_arquivo)
+        
+        ano_match = re.search(r'(\b(20\d{2})\b)', nome_arquivo + " " + texto_completo)
         ano = ano_match.group(1) if ano_match else (pss.split('/')[1] if '/' in pss else "Não encontrado")
 
         texto_upper = texto_completo.upper()
-        extrator_selecionado = None
+        dados_base = []
+
+        keywords_disciplina_unica = ["AEE", "ATENDIMENTO EDUCACIONAL ESPECIALIZADO", "SALA DE RECURSO", "PROJETO MUNDI", "INTÉRPRETE DE LIBRAS", "ACOMPANHAMENTO ESPECIALIZADO"]
         
         if "REFORÇO ESCOLAR" in texto_upper:
-            extrator_selecionado = padrao_reforco_escolar
+            dados_base = padrao_reforco_escolar(texto_completo=texto_completo, status_flags=status_flags)
         elif "PROJETO SEI" in texto_upper:
-            extrator_selecionado = padrao_projeto_sei_refinado
-        elif any(kw in texto_upper for kw in ["SOME", "CEMEP", "EJA CAMPO", "EDUCAÇÃO ESPECIAL"]) or "ENSINO REGULAR" in texto_upper:
-            extrator_selecionado = padrao_tabela_generica
+            dados_base = padrao_projeto_sei_refinado(texto_completo=texto_completo, status_flags=status_flags)
+        elif any(kw in texto_upper for kw in keywords_disciplina_unica):
+            dados_base = padrao_lista_disciplina_unica(texto_completo=texto_completo, status_flags=status_flags)
+        elif "QUADRO DE VAGAS" in texto_upper:
+            dados_base = padrao_tabela_generica(texto_completo=texto_completo, status_flags=status_flags)
+            if not dados_base:
+                dados_base = padrao_lista_disciplina_unica(texto_completo=texto_completo, status_flags=status_flags)
         
-        if not extrator_selecionado:
-            print(f"      -> AVISO: Nenhum padrão de extração conhecido foi encontrado para {nome_arquivo}.")
+        if not dados_base:
+            if not status_flags['sem_vagas'] and not status_flags['imagem']:
+                print(f"      -> FALHA: Nenhum registro válido extraído de {nome_arquivo} com os padrões testados.")
             return []
-
-        dados_base = extrator_selecionado(texto_completo=texto_completo)
 
         registros_finais = []
         for item in dados_base:
-            item.update({
-                "Ano": ano, "PSS": pss, "Edital": nome_arquivo,
-                "Arquivo_Origem": nome_arquivo, "Data_Extração": datetime.now().strftime('%Y-%m-%d')
-            })
-            registros_finais.append(item)
+            municipio_clean = item.get("Município", "").replace('\n', ' ').strip()
+            disciplina_clean = item.get("Disciplina", "").replace('\n', ' ').strip()
+
+            if municipio_clean and disciplina_clean:
+                item.update({ "Ano": ano, "PSS": pss, "Edital": nome_arquivo, "Município": municipio_clean, "Disciplina": disciplina_clean, "Arquivo_Origem": nome_arquivo, "Data_Extração": datetime.now().strftime('%Y-%m-%d') })
+                registros_finais.append(item)
         
-        if not registros_finais:
-            print(f"      -> FALHA: Nenhum registro válido extraído de {nome_arquivo} com o padrão selecionado.")
-        else:
-            print(f"      -> Sucesso! ({len(registros_finais)} registros extraídos)")
-            
+        print(f"      -> Sucesso! ({len(registros_finais)} registros extraídos)")
         return registros_finais
 
     except Exception as e:
-        print(f"      -> ERRO GERAL ao processar {nome_arquivo}: {e}")
+        print(f"      -> ERRO GERAL ao processar {os.path.basename(caminho_arquivo)}: {e}")
         return []
 
 def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
@@ -193,8 +243,10 @@ def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
     if not os.path.isdir(caminho_da_pasta):
         print(f"ERRO: A pasta '{caminho_da_pasta}' não foi encontrada!")
         return
+        
     arquivos_na_pasta = [f for f in os.listdir(caminho_da_pasta) if f.lower().endswith('.pdf')]
     print(f"Encontrados {len(arquivos_na_pasta)} arquivos PDF em '{caminho_da_pasta}'.")
+    
     for nome_arquivo in sorted(arquivos_na_pasta):
         caminho_completo = os.path.join(caminho_da_pasta, nome_arquivo)
         dados_extraidos = extrair_informacoes_pdf(caminho_completo)
@@ -207,10 +259,11 @@ def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
         return
 
     df = pd.DataFrame(registros)
-    df = df[["Ano", "PSS", "Edital", "Município", "Disciplina", "Arquivo_Origem", "Data_Extração"]]
+    colunas_finais = ["Ano", "PSS", "Edital", "Município", "Disciplina", "Arquivo_Origem", "Data_Extração"]
+    df = df.reindex(columns=colunas_finais)
 
     pasta_saida = os.path.dirname(nome_arquivo_saida)
-    if not os.path.exists(pasta_saida):
+    if pasta_saida and not os.path.exists(pasta_saida):
         os.makedirs(pasta_saida)
         
     df.to_csv(nome_arquivo_saida, index=False, sep=';', encoding='utf-8-sig')
@@ -220,7 +273,6 @@ def processar_pasta_e_salvar_planilha(caminho_da_pasta, nome_arquivo_saida):
     print(f"Dados salvos em '{nome_arquivo_saida}'!")
 
 if __name__ == "__main__":
-
     pasta_saida_nome = "planilha conv especial"
     os.makedirs(pasta_saida_nome, exist_ok=True)
 
