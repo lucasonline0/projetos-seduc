@@ -19,9 +19,8 @@ O dashboard possui como fonte de dados duas planilhas do Google Drive:
 
 1. Painel de Homologação de Estágio Probatório
 
-- Gráfico temporal com prazo de conclusão dos processos
-- Indicadores de status (Em andamento, Concluído, Atrasado)
-- Filtros por período e responsável
+- Total de servidores não homologados por Regiao, DRE, Tipo de avaliação etc.
+
 
 2. Painel de Desempenho da Equipe
 
