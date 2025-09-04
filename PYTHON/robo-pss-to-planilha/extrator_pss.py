@@ -11,7 +11,21 @@ def extract_text_from_pdf(pdf_path):
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text + "\n"
+                    lines = page_text.split("\n")
+                    possible_footer_keywords = [r'\bTel\b', r'\bFax\b', r'\bCEP\b', r'Rodovia', r'Km\s*\d+']
+                    
+                    num_lines_to_check = 4
+                    lines_to_remove = 0
+                    for i in range(1, num_lines_to_check + 1):
+                        if len(lines) >= i:
+                            line_to_check = lines[-i]
+                            if any(re.search(keyword, line_to_check, re.IGNORECASE) for keyword in possible_footer_keywords):
+                                lines_to_remove = i
+                    
+                    if lines_to_remove > 0:
+                        lines = lines[:-lines_to_remove]
+
+                    text += "\n".join(lines) + "\n"
     except Exception as e:
         print(f"Erro ao ler o PDF {os.path.basename(pdf_path)}: {e}")
     return text
@@ -48,7 +62,7 @@ def extract_info_from_text(text, filename):
         "Medicilândia", "Melgaço", "Mocajuba", "Moju", "Mojuí dos Campos", "Monte Alegre", "Muaná",
         "Nova Esperança do Piriá", "Nova Ipixuna", "Nova Timboteua", "Novo Progresso", "Novo Repartimento",
         "Óbidos", "Oeiras do Pará", "Ourém", "Ourilândia do Norte", "Pacajá", "Palestina do Pará",
-        "Paragominas", "Parauapebas", "Pau D'Arco", "Peixe-Boi", "Piçarra", "Placas", "Ponta de Pedras",
+        "Paragominas", "Parauapebas", "Pau D\'Arco", "Peixe-Boi", "Piçarra", "Placas", "Ponta de Pedras",
         "Portel", "Porto de Moz", "Prainha", "Primavera", "Quatipuru", "Redenção", "Rio Maria",
         "Rondon do Pará", "Rurópolis", "Salinópolis", "Salvaterra", "Santa Bárbara do Pará",
         "Santa Cruz do Arari", "Santa Izabel do Pará", "Santa Luzia do Pará", "Santa Maria das Barreiras",
@@ -95,7 +109,7 @@ def extract_info_from_text(text, filename):
         disciplines = {disc for disc in disciplinas_comuns if re.search(r'\b' + re.escape(disc) + r'\b', text_to_search, re.IGNORECASE)}
         return municipalities, disciplines
 
-    quadro_vagas_match = re.search(r'QUADRO DE VAGAS(.*?)(?:TOTAL DE VAGAS|RELAÇÃO DE E-MAIL)', text, re.DOTALL | re.IGNORECASE)
+    quadro_vagas_match = re.search(r'QUADRO DE VAGAS(.*?)(?:TOTAL DE VAGAS|RELAÇÃO DE E-MAIL|Tiago Lima e Silva)', text, re.DOTALL | re.IGNORECASE)
     
     found_municipalities, found_disciplines = set(), set()
     if quadro_vagas_match:
@@ -128,35 +142,35 @@ ARQUIVO_SAIDA = "convocacoes_especiais.xlsx"
 all_data = []
 
 if not os.path.isdir(PASTA_PDFS):
-    print(f" Erro: A pasta '{PASTA_PDFS}' não foi encontrada.")
+    print(f" Erro: A pasta \033[91m'{PASTA_PDFS}'\033[0m não foi encontrada.")
 else:
     pdf_files = [f for f in os.listdir(PASTA_PDFS) if f.lower().endswith(".pdf")]
     
     if not pdf_files:
-        print(f"Nenhum arquivo PDF encontrado em '{PASTA_PDFS}'.")
+        print(f"Nenhum arquivo PDF encontrado em \033[93m'{PASTA_PDFS}'\033[0m.")
     else:
         for arquivo in pdf_files:
             caminho = os.path.join(PASTA_PDFS, arquivo)
-            print(f"📄 Processando: {arquivo}")
+            print(f"\033[94m📄 Processando:\033[0m {arquivo}")
 
             texto_pdf = extract_text_from_pdf(caminho)
             
             if not texto_pdf:
-                print(f"   -> Não foi possível extrair texto deste PDF.\n")
+                print(f"   -> \033[91mNão foi possível extrair texto deste PDF.\033[0m\n")
                 continue
 
             extracted_data = extract_info_from_text(texto_pdf, arquivo)
             
             if extracted_data:
                 all_data.extend(extracted_data)
-                print(f"   -> ✅ {len(extracted_data)} registros extraídos.\n")
+                print(f"   -> \033[92m✅ {len(extracted_data)} registros extraídos.\033[0m\n")
             else:
-                print(f"   -> Nenhum dado relevante encontrado.\n")
+                print(f"   -> \033[93mNenhum dado relevante encontrado.\033[0m\n")
 
 if all_data:
     df = pd.DataFrame(all_data)
     df.drop_duplicates(subset=["Ano", "PSS", "Edital", "Município", "Disciplina"], inplace=True)
     df.to_excel(ARQUIVO_SAIDA, index=False)
-    print(f"Extração concluída! {len(df)} registros únicos salvos em {ARQUIVO_SAIDA}")
+    print(f"\033[92mExtração concluída! {len(df)} registros únicos salvos em {ARQUIVO_SAIDA}\033[0m")
 else:
-    print("❌ Nenhuma informação foi extraída de nenhum dos PDFs.")
+    print("\033[91m❌ Nenhuma informação foi extraída de nenhum dos PDFs.\033[0m")
