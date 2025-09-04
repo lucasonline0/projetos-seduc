@@ -16,6 +16,7 @@ Aqui estão as soluções que estamos desenvolvendo para a SEDUC.
 | 🚧 | **Gerador de Despachos** | Ferramenta para automatizar a criação e o preenchimento de despachos, agilizando processos administrativos. |
 | ✅ | **Web Scraper de Processos Seletivos (PSS)** | Solução para extrair e organizar de forma sistemática os arquivos e informações dos Processos Seletivos Simplificados (PSS) publicados no site da Seduc. |
 | 🚧 | **Avaliação de Estágio Probatório** | Desenvolvimento de um formulário digital para que as chefias possam avaliar o desempenho dos servidores em estágio probatório de forma estruturada. |
+| ✅ | **Extractor de Convocações Especiais (PDF → Excel)** | Script em Python que processa automaticamente os editais de convocações especiais em PDF, identifica municípios e suas respectivas disciplinas, e gera uma planilha Excel consolidada com os dados extraídos. |
 
 **Legenda:**
 -   `✅ Concluído`
