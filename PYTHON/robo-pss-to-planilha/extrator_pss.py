@@ -1,176 +1,209 @@
-import pdfplumber
-import pandas as pd
-import re
-from datetime import datetime
 import os
+import re
+import datetime
+import pandas as pd
+import pdfplumber
+import unicodedata
+from itertools import product
 
-def extract_text_from_pdf(pdf_path):
-    text = ""
+PDF_FOLDER_PATH = r"C:/Users/SEDUC/Desktop/conv especiais"
+OUTPUT_FILE_NAME = "convocacoes_especiais.xlsx"
+
+# Lista de municípios e distritos a serem procurados nos textos dos editais.
+MUNICÍPIOS = [
+    'Abaetetuba', 'Abel Figueiredo', 'Acará', 'Afuá', 'Agua Azul do Norte',
+    'Alenquer', 'Almeirim', 'Altamira', 'Anajás', 'Ananindeua', 'Anapu',
+    'Augusto Corrêa', 'Aurora do Pará', 'Aveiro', 'Bagre', 'Baião', 'Bannach',
+    'Barcarena', 'Belém', 'Belterra', 'Benevides', 'Bom Jesus do Tocantins',
+    'Bonito', 'Bragança', 'Brasil Novo', 'Brejo Grande do Araguaia',
+    'Breu Branco', 'Breves', 'Bujaru', 'Cachoeira do Arari', 'Cachoeira do Piriá',
+    'Cametá', 'Canaa dos Carajas', 'Capanema', 'Capitão Poço', 'Castanhal',
+    'Chaves', 'Colares', 'Conceição do Araguaia', 'Concórdia do Pará',
+    'Cumaru do Norte', 'Curionopolis', 'Curralinho', 'Curuá', 'Curuçá',
+    'Dom Eliseu', 'Eldorado dos Carajas', 'Faro', 'Floresta do Araguaia',
+    'Garrafão do Norte', 'Goianésia do Pará', 'Gurupá', 'Icoaraci', 'Igarapé-Açu',
+    'Igarapé Miri', 'Inhangapi', 'Ipixuna do Pará', 'Irituia', 'Itaituba',
+    'Itupiranga', 'Jacareacanga', 'Jacundá', 'Juruti', 'Limoeiro do Ajuru',
+    'Mãe do Rio', 'Magalhães Barata', 'Marabá', 'Maracanã', 'Marapanim',
+    'Marituba', 'Medicilândia', 'Melgaço', 'Mocajuba', 'Moju', 'Mojuí dos Campos',
+    'Monte Alegre', 'Monte Dourado', 'Mosqueiro', 'Muaná',
+    'Nova Esperança do Piriá', 'Nova Ipixuna', 'Nova Timboteua',
+    'Novo Progresso', 'Novo Repartimento', 'Obidos', 'Oeiras do Pará',
+    'Oriximiná', 'Ourém', 'Ourilandia do Norte', 'Pacajá', 'Palestina do Pará',
+    'Paragominas', 'Parauapebas', 'Pau D\'Arco', 'Peixe-boi', 'Piçarra', 'Placas',
+    'Ponta de Pedras', 'Portel', 'Porto de Moz', 'Prainha', 'Primavera',
+    'Quatipuru', 'Redenção', 'Rio Maria', 'Rondon do Pará', 'Rurópolis',
+    'Salinas', 'Salinópolis', 'Salvaterra', 'Santa Barbara', 'Santa Cruz da Arari',
+    'Santa Izabel do Pará', 'Santa Luzia do Pará', 'Santa Maria das Barreiras',
+    'Santa Maria do Pará', 'Santana do Araguaia', 'Santarém', 'Santarém Novo',
+    'Santo Antônio do Pará', 'Santo Antônio do Tauá', 'São Caetano de Odivelas',
+    'São Domingos do Araguaia', 'São Domingos do Capim', 'São Felix do Xingu',
+    'São Francisco do Pará', 'São Geraldo do Araguaia', 'São João da Ponta',
+    'São João de Pirabas', 'São João do Araguaia', 'São Miguel do Guamá',
+    'São Sebastiao da Boa Vista', 'Sapucaia', 'Senador José Porfírio', 'Soure',
+    'Tailandia', 'Terra Alta', 'Terra Santa', 'Tomé-Açu', 'Tracuateua', 'Trairão',
+    'Tucumã', 'Tucuruí', 'Ulianópolis', 'Uruará', 'Vigia', 'Viseu',
+    'Vitória do Xingu', 'Xinguara'
+]
+
+DISCIPLINAS = [
+    'Acompanhante Especializado', 'APOIO-TRADUTOR INTERPRETE DE LIBRAS', 'Artes',
+    'Biologia', 'BRAILISTA', 'CIÊNCIAS AGRÁRIAS E SUAS TECNOLOGIAS',
+    'CIÊNCIAS HUMANAS E SUAS TECNOLOGIAS', 'CIÊNCIAS NATURAIS E SUAS TECNOLOGIAS',
+    'CONTADOR', 'DESIGN', 'Educação Física', 'Educação Geral', 'Espanhol',
+    'Filosofia', 'Fisica', 'Geografia', 'Historia', 'Ingles',
+    'Intérprete de Libras', 'LINGUAGENS CÓDIGOS E SUAS TECNOLOGIAS',
+    'Lingua Inglesa', 'Lingua Portuguesa',
+    'MATEMÁTICA, CÓDIGOS E SUAS TECNOLOGIAS', 'Matemática', 'Português',
+    'PROFESSOR COORDENADOR(A) DE TURMA',
+    'PROFESSOR DE ATENDIMENTO EDUCACIONAL ESPECIALIZADO AEE',
+    'Professor Educador Agrárias',
+    'Professor Educador Ciências Humanas e suas Tecnologias',
+    'Professor Educador Ciências Naturais e suas Tecnologias',
+    'Professor Educador Matemáticas e suas Tecnologias', 'Quimica', 'Sociologia'
+]
+
+def normalizar_texto(texto):
+    if not texto:
+        return ""
+    nfkd_form = unicodedata.normalize('NFKD', texto)
+    texto_sem_acento = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    return texto_sem_acento.upper().strip()
+
+def extrair_texto_de_pdf(caminho_pdf):
+    """
+    Extrai todo o texto de um arquivo PDF.
+    """
+    texto_completo = ""
     try:
-        with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    lines = page_text.split("\n")
-                    possible_footer_keywords = [r'\bTel\b', r'\bFax\b', r'\bCEP\b', r'Rodovia', r'Km\s*\d+']
-                    
-                    num_lines_to_check = 4
-                    lines_to_remove = 0
-                    for i in range(1, num_lines_to_check + 1):
-                        if len(lines) >= i:
-                            line_to_check = lines[-i]
-                            if any(re.search(keyword, line_to_check, re.IGNORECASE) for keyword in possible_footer_keywords):
-                                lines_to_remove = i
-                    
-                    if lines_to_remove > 0:
-                        lines = lines[:-lines_to_remove]
-
-                    text += "\n".join(lines) + "\n"
+        with pdfplumber.open(caminho_pdf) as pdf:
+            for pagina in pdf.pages:
+                texto = pagina.extract_text()
+                if texto:
+                    texto_completo += texto + "\n"
     except Exception as e:
-        print(f"Erro ao ler o PDF {os.path.basename(pdf_path)}: {e}")
-    return text
+        print(f"  [ERRO] Não foi possível ler o arquivo {os.path.basename(caminho_pdf)}: {e}")
+    return texto_completo
 
-def extract_info_from_text(text, filename):
-    data = []
-
-    disciplinas_comuns = sorted(list(set([
-        "Matemática", "Língua Portuguesa", "História", "Geografia", "Educação Física",
-        "Ciências", "Biologia", "Química", "Física", "Sociologia", "Filosofia",
-        "Artes", "Inglês", "Espanhol", "Educação Artística", "Ensino Religioso",
-        "Informática", "Agropecuária", "Zootecnia", "Enfermagem", "Contabilidade",
-        "Administração", "Direito", "Pedagogia", "Letras", "Educação Especial",
-        "Ciências Agrárias", "Tecnologias", "Educação do Campo", "EJA CAMPO",
-        "Acompanhante Especializado", "Intérprete de Libras", "Merendeira", "SOME",
-        "Contador", "Professor", "Qualquer disciplina", "Educação Geral", "Língua Inglesa",
-        "Apoio - Tradutor Intérprete de Libras", "Atendimento Educacional Especializado", "AEE",
-        "Brailista", "Ciências da Natureza e suas Tecnologias", "Ciências Humanas e suas Tecnologias",
-        "Linguagens Códigos e suas Tecnologias", "Professor Coordenador(a) de Turma", "Projeto SEI"
-    ])))
-    
-    municipios_comuns = sorted(list(set([
-        "Abel Figueiredo", "Acará", "Afuá", "Água Azul do Norte", "Alenquer", "Almeirim", "Altamira",
-        "Anajás", "Ananindeua", "Anapu", "Augusto Corrêa", "Aurora do Pará", "Aveiro", "Bagre",
-        "Baião", "Bannach", "Barcarena", "Belém", "Belterra", "Benevides", "Bom Jesus do Tocantins",
-        "Bonito", "Bragança", "Brasil Novo", "Brejo Grande do Araguaia", "Breu Branco", "Buarque",
-        "Cachoeira do Arari", "Cachoeira do Piriá", "Cametá", "Canaã dos Carajás", "Capanema",
-        "Capitão Poço", "Castanhal", "Chaves", "Colares", "Conceição do Araguaia", "Concórdia do Pará",
-        "Cumaru do Norte", "Curuá", "Curuçá", "Curionópolis", "Curralinho", "Dom Eliseu",
-        "Eldorado dos Carajás", "Faro", "Floresta do Araguaia", "Garrafão do Norte", "Goianésia do Pará",
-        "Gurupá", "Icoaraci", "Igarapé-Açu", "Igarapé-Miri", "Inhangapi", "Ipixuna do Pará", "Irituia",
-        "Itaituba", "Itupiranga", "Jacareacanga", "Jacundá", "Juruti", "Limoeiro do Ajuru",
-        "Mãe do Rio", "Magalhães Barata", "Marabá", "Maracanã", "Marapanim", "Marituba",
-        "Medicilândia", "Melgaço", "Mocajuba", "Moju", "Mojuí dos Campos", "Monte Alegre", "Muaná",
-        "Nova Esperança do Piriá", "Nova Ipixuna", "Nova Timboteua", "Novo Progresso", "Novo Repartimento",
-        "Óbidos", "Oeiras do Pará", "Ourém", "Ourilândia do Norte", "Pacajá", "Palestina do Pará",
-        "Paragominas", "Parauapebas", "Pau D\'Arco", "Peixe-Boi", "Piçarra", "Placas", "Ponta de Pedras",
-        "Portel", "Porto de Moz", "Prainha", "Primavera", "Quatipuru", "Redenção", "Rio Maria",
-        "Rondon do Pará", "Rurópolis", "Salinópolis", "Salvaterra", "Santa Bárbara do Pará",
-        "Santa Cruz do Arari", "Santa Izabel do Pará", "Santa Luzia do Pará", "Santa Maria das Barreiras",
-        "Santa Maria do Pará", "Santana do Araguaia", "Santarém", "Santarém Novo", "Santo Antônio do Tauá",
-        "São Caetano de Odivelas", "São Domingos do Araguaia", "São Domingos do Capim",
-        "São Félix do Xingu", "São Francisco do Pará", "São Geraldo do Araguaia", "São João da Ponta",
-        "São João de Pirabas", "São João do Araguaia", "São Miguel do Guamá", "São Sebastião da Boa Vista",
-        "Sapucaia", "Senador José Porfírio", "Soure", "Tailândia", "Terra Alta", "Terra Santa",
-        "Tomé-Açu", "Tracuateua", "Trairão", "Tucumã", "Tucuruí", "Ulianópolis", "Uruará", "Vigia",
-        "Viseu", "Vitória do Xingu", "Xinguara", "Anexo Estrela do Pará", "Bela Vista do Baixo",
-        "Bela Vista do Mocoões", "Cachoeira da Serra", "Casa de Tábua", "Castelo dos Sonhos",
-        "Comunidade Arrozal", "Comunidade do Ipanema", "Comunidade Maria Ribeira",
-        "Comunidade Nossa Senhora de Nazaré", "Comunidade Porto Alegre", "Comunidade Santa Luzia",
-        "Comunidade São Francisco", "Comunidade São José", "Comunidade São Pedro",
-        "Distrito de Moraes Almeida", "Distrito de Mosqueiro", "Estrela do Pará", "Forquilha",
-        "Mata Verde", "Santa Maria de Icatu", "Tabatinga", "Vila Bela Vista", "Vila do Carmo",
-        "Vila Estrela do Pará", "Vila Lawton", "Vila Martins Ferreira", "Vila Nazaré", "Vila Nova",
-        "Vila Ponta de Pedras", "Vila Romaria", "Vila Santa Cruz"
-    ])))
-
-    pss = "N/A"
-    year = "N/A"
-
-    pss_match = re.search(r'PSS\s*(?:Nº)?\s*(\d{2,4}/\d{4})', text, re.IGNORECASE) or \
-                re.search(r'PROCESSO SELETIVO SIMPLIFICADO\s*(?:Nº)?\s*(\d{2,4}/\d{4})', text, re.IGNORECASE)
-    if pss_match:
-        pss = pss_match.group(1)
-
-    date_match = re.search(r'Belém,\s*\d{1,2}\s+de\s+\w+\s+de\s+(\d{4})', text, re.IGNORECASE)
+def extrair_ano(texto, nome_arquivo):
+    date_match = re.search(r'Belém,\s*\d{1,2}\s+de\s+\w+\s+de\s+(\d{4})', texto, re.IGNORECASE)
     if date_match:
-        year = date_match.group(1)
-    else:
-        year_match_in_edital = re.search(r'EDITAL\s*(?:nº)?\s*\d{1,3}/(\d{4})', text, re.IGNORECASE)
-        if year_match_in_edital:
-            year = year_match_in_edital.group(1)
+        return date_match.group(1)
+
+    year_match_in_edital = re.search(r'EDITAL\s*(?:nº)?\s*\d{1,3}/(\d{4})', texto, re.IGNORECASE)
+    if year_match_in_edital:
+        return year_match_in_edital.group(1)
+
+    valid_years = "|".join(map(str, range(2019, datetime.datetime.now().year + 2)))
+    fallback_match = re.search(r'\b(' + valid_years + r')\b', texto + " " + nome_arquivo)
+    if fallback_match:
+        return fallback_match.group(1)
+        
+    return "N/A"
+
+def extrair_pss(texto):
+    match = re.search(r'PROCESSO SELETIVO SIMPLIFICADO\s*(?:Nº)?\s*(\d{2,4}/\d{4})', texto, re.IGNORECASE) or \
+            re.search(r'PSS\s*(?:Nº)?\s*(\d{2,4}/\d{4})', texto, re.IGNORECASE)
+    
+    return match.group(1) if match else "N/A"
+
+def extrair_edital(texto):
+    padrao = re.search(r"EDITAL\s*n?º?\s*([\d/]+)", texto, re.IGNORECASE)
+    return padrao.group(1).strip() if padrao else "N/A"
+
+def encontrar_entidades(texto, lista_entidades):
+    encontrados = set()
+    texto_normalizado = normalizar_texto(texto)
+    for entidade in lista_entidades:
+        entidade_normalizada = normalizar_texto(entidade)
+        if re.search(r'\b' + re.escape(entidade_normalizada) + r'\b', texto_normalizado):
+            encontrados.add(entidade)
+    return sorted(list(encontrados))
+
+def main():
+    print("Iniciando a extração de dados dos editais da SEDUC...")
+    
+    if "COLOQUE_O_CAMINHO_DA_SUA_PASTA_AQUI" in PDF_FOLDER_PATH:
+        print("[ERRO] Por favor, configure a variável 'PDF_FOLDER_PATH' no script com o caminho da sua pasta de PDFs.")
+        return
+
+    if not os.path.isdir(PDF_FOLDER_PATH):
+        print(f"[ERRO] O diretório especificado não foi encontrado: {PDF_FOLDER_PATH}")
+        return
+
+    arquivos_pdf = [f for f in os.listdir(PDF_FOLDER_PATH) if f.lower().endswith(".pdf")]
+
+    if not arquivos_pdf:
+        print(f"[AVISO] Nenhum arquivo PDF encontrado no diretório: {PDF_FOLDER_PATH}")
+        return
+
+    dados_extraidos = []
+    data_extracao_atual = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    print(f"Encontrados {len(arquivos_pdf)} arquivos PDF para processar.")
+
+    for nome_arquivo in arquivos_pdf:
+        caminho_completo = os.path.join(PDF_FOLDER_PATH, nome_arquivo)
+        print(f"\nProcessando arquivo: {nome_arquivo}...")
+
+        texto_pdf = extrair_texto_de_pdf(caminho_completo)
+        if not texto_pdf:
+            continue
+
+        # Extração dos dados principais
+        ano = extrair_ano(texto_pdf, nome_arquivo)
+        pss = extrair_pss(texto_pdf)
+        edital = extrair_edital(texto_pdf)
+        
+        # Busca por municípios sempre
+        municipios_encontrados = encontrar_entidades(texto_pdf, MUNICÍPIOS)
+        
+        # VERIFICA O NOME DO ARQUIVO PARA "PROJETO SEI"
+        if "projeto sei" in nome_arquivo.lower():
+            # Se encontrar, define a disciplina manualmente e pula a busca padrão
+            disciplinas_encontradas = ["PROJETO SEI"]
+            print("  -> Regra especial ativada: Arquivo identificado como 'PROJETO SEI'.")
         else:
-            valid_years = "|".join(map(str, range(2019, 2026)))
-            fallback_match = re.search(r'\b(' + valid_years + r')\b', text + " " + filename)
-            if fallback_match:
-                year = fallback_match.group(1)
+            # Se não, continua com a busca normal por disciplinas
+            disciplinas_encontradas = encontrar_entidades(texto_pdf, DISCIPLINAS)
+        # fim da logica
 
-    def find_entries(text_to_search):
-        municipalities = {mun for mun in municipios_comuns if re.search(r'\b' + re.escape(mun) + r'\b', text_to_search, re.IGNORECASE)}
-        disciplines = {disc for disc in disciplinas_comuns if re.search(r'\b' + re.escape(disc) + r'\b', text_to_search, re.IGNORECASE)}
-        return municipalities, disciplines
+        print(f"  - PSS: {pss}, Edital: {edital}, Ano: {ano}")
+        print(f"  - Municípios encontrados: {len(municipios_encontrados)} -> {municipios_encontrados if municipios_encontrados else 'Nenhum'}")
+        print(f"  - Disciplinas encontradas: {len(disciplinas_encontradas)} -> {disciplinas_encontradas if disciplinas_encontradas else 'Nenhuma'}")
 
-    quadro_vagas_match = re.search(r'QUADRO DE VAGAS(.*?)(?:TOTAL DE VAGAS|RELAÇÃO DE E-MAIL|Tiago Lima e Silva)', text, re.DOTALL | re.IGNORECASE)
-    
-    found_municipalities, found_disciplines = set(), set()
-    if quadro_vagas_match:
-        quadro_text = quadro_vagas_match.group(1)
-        found_municipalities, found_disciplines = find_entries(quadro_text)
+        if not municipios_encontrados and not disciplinas_encontradas:
+             municipios_para_iterar = ["N/A"]
+             disciplinas_para_iterar = ["N/A"]
+        else:
+             municipios_para_iterar = municipios_encontrados if municipios_encontrados else ["N/A"]
+             disciplinas_para_iterar = disciplinas_encontradas if disciplinas_encontradas else ["N/A"]
 
-    if not found_municipalities and not found_disciplines:
-        found_municipalities, found_disciplines = find_entries(text)
-
-    final_municipalities = list(found_municipalities) if found_municipalities else ["N/A"]
-    final_disciplines = list(found_disciplines) if found_disciplines else ["N/A"]
-
-    for m in final_municipalities:
-        for d in final_disciplines:
-            data.append({
-                "Ano": year,
+        for municipio, disciplina in product(municipios_para_iterar, disciplinas_para_iterar):
+            linha_dados = {
+                "Ano": ano,
                 "PSS": pss,
-                "Edital": filename.replace('.pdf', ''),
-                "Município": m,
-                "Disciplina": d,
-                "Arquivo_Origem": filename,
-                "Data_Extração": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            })
+                "Edital": edital,
+                "Município": municipio,
+                "Disciplina_Função": disciplina,
+                "Arquivo_Origem": nome_arquivo,
+                "Data_Extração": data_extracao_atual
+            }
+            dados_extraidos.append(linha_dados)
 
-    return data
+    if not dados_extraidos:
+        print("Nenhum dado foi extraído. Verifique o conteúdo dos arquivos PDF.")
+        return
 
-PASTA_PDFS = "C:/Users/SEDUC/Desktop/conv especiais"
-ARQUIVO_SAIDA = "convocacoes_especiais.xlsx"
-
-all_data = []
-
-if not os.path.isdir(PASTA_PDFS):
-    print(f" Erro: A pasta \033[91m'{PASTA_PDFS}'\033[0m não foi encontrada.")
-else:
-    pdf_files = [f for f in os.listdir(PASTA_PDFS) if f.lower().endswith(".pdf")]
+    # Criação do DataFrame e salvamento em Excel
+    df = pd.DataFrame(dados_extraidos)
     
-    if not pdf_files:
-        print(f"Nenhum arquivo PDF encontrado em \033[93m'{PASTA_PDFS}'\033[0m.")
-    else:
-        for arquivo in pdf_files:
-            caminho = os.path.join(PASTA_PDFS, arquivo)
-            print(f"\033[94m📄 Processando:\033[0m {arquivo}")
+    try:
+        df.to_excel(OUTPUT_FILE_NAME, index=False, engine='openpyxl')
+        print(f"\n\n[SUCESSO] Processo concluído!")
+        print(f"Os dados foram salvos no arquivo: {os.path.abspath(OUTPUT_FILE_NAME)}")
+    except Exception as e:
+        print(f"\n[ERRO] Não foi possível salvar o arquivo Excel: {e}")
 
-            texto_pdf = extract_text_from_pdf(caminho)
-            
-            if not texto_pdf:
-                print(f"   -> \033[91mNão foi possível extrair texto deste PDF.\033[0m\n")
-                continue
-
-            extracted_data = extract_info_from_text(texto_pdf, arquivo)
-            
-            if extracted_data:
-                all_data.extend(extracted_data)
-                print(f"   -> \033[92m✅ {len(extracted_data)} registros extraídos.\033[0m\n")
-            else:
-                print(f"   -> \033[93mNenhum dado relevante encontrado.\033[0m\n")
-
-if all_data:
-    df = pd.DataFrame(all_data)
-    df.drop_duplicates(subset=["Ano", "PSS", "Edital", "Município", "Disciplina"], inplace=True)
-    df.to_excel(ARQUIVO_SAIDA, index=False)
-    print(f"\033[92mExtração concluída! {len(df)} registros únicos salvos em {ARQUIVO_SAIDA}\033[0m")
-else:
-    print("\033[91m❌ Nenhuma informação foi extraída de nenhum dos PDFs.\033[0m")
+if __name__ == "__main__":
+    main()
